@@ -78,8 +78,6 @@ app.delete("/todos/:id", async (req, res) => {
   }
 });
 
-// ✅ Start server
-const PORT = 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Backend running at http://localhost:${PORT}`);
+app.listen(5000, "0.0.0.0", () => {
+  console.log("Server running on port 5000");
 });
