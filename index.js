@@ -1,18 +1,17 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const swaggerUi = require("swagger-ui-express");
+const swaggerJsdoc = require("swagger-jsdoc");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 // ✅ MongoDB connection
-mongoose.connect("mongodb://127.0.0.1:27017/todos", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log("✅ MongoDB connected"))
-.catch(err => console.error("❌ MongoDB connection error:", err));
+mongoose.connect("mongodb://127.0.0.1:27017/todos")
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch(err => console.error("❌ MongoDB connection error:", err));
 
 // ✅ Schema & Model
 const TodoSchema = new mongoose.Schema({
@@ -21,9 +20,73 @@ const TodoSchema = new mongoose.Schema({
 });
 const Todo = mongoose.model("Todo", TodoSchema);
 
-// ✅ Routes
+// ===================
+// Swagger setup
+// ===================
+const options = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Todo API",
+      version: "1.0.0",
+      description: "A simple Todo API example with Swagger",
+    },
+    servers: [
+      { url: "http://localhost:5000" }
+    ],
+  },
+  apis: ["./index.js"], // this file contains the annotations
+};
 
-// Get all todos
+const specs = swaggerJsdoc(options);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
+
+// ===================
+// Routes
+// ===================
+
+/**
+ * @swagger
+ * /test:
+ *   get:
+ *     summary: Test API route
+ *     responses:
+ *       200:
+ *         description: Test successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ */
+app.get("/test", (req, res) => {
+  res.json({ message: "🎉 Test API working!" });
+});
+
+/**
+ * @swagger
+ * /todos:
+ *   get:
+ *     summary: Get all todos
+ *     responses:
+ *       200:
+ *         description: List of todos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                   text:
+ *                     type: string
+ *                   completed:
+ *                     type: boolean
+ */
 app.get("/todos", async (req, res) => {
   try {
     const todos = await Todo.find();
@@ -33,28 +96,53 @@ app.get("/todos", async (req, res) => {
   }
 });
 
-// Add new todo
+/**
+ * @swagger
+ * /todos:
+ *   post:
+ *     summary: Add a new todo
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               text:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: The created todo
+ */
 app.post("/todos", async (req, res) => {
   try {
-    console.log("📩 Incoming POST:", req.body); // 👈 check this in terminal
-
     if (!req.body.text) {
       return res.status(400).json({ error: "Text is required" });
     }
-
     const todo = new Todo({ text: req.body.text });
     await todo.save();
-
-    console.log("✅ Saved todo:", todo); // 👈 confirm saved
     res.json(todo);
   } catch (err) {
-    console.error("❌ Error saving todo:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-
-// Toggle completed
+/**
+ * @swagger
+ * /todos/{id}:
+ *   put:
+ *     summary: Toggle completed status of a todo
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Todo ID
+ *     responses:
+ *       200:
+ *         description: Updated todo
+ */
 app.put("/todos/:id", async (req, res) => {
   try {
     const todo = await Todo.findById(req.params.id);
@@ -68,7 +156,22 @@ app.put("/todos/:id", async (req, res) => {
   }
 });
 
-// Delete todo
+/**
+ * @swagger
+ * /todos/{id}:
+ *   delete:
+ *     summary: Delete a todo
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Todo ID
+ *     responses:
+ *       200:
+ *         description: Todo deleted
+ */
 app.delete("/todos/:id", async (req, res) => {
   try {
     await Todo.findByIdAndDelete(req.params.id);
@@ -78,6 +181,9 @@ app.delete("/todos/:id", async (req, res) => {
   }
 });
 
+// ===================
+// Start server
+// ===================
 app.listen(5000, "0.0.0.0", () => {
   console.log("Server running on port 5000");
 });
