@@ -32,7 +32,7 @@ const swaggerOptions = {
       description: "Simple Todo API with Express and MongoDB",
     },
     servers: [
-      { url: "http://localhost:5000" }, // Change to your EC2 public IP if needed
+      { url: "http://13.60.36.33:5000" }, // Change to your EC2 public IP if needed
     ],
   },
   apis: ["./index.js"], // Use this file for annotations
