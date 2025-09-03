@@ -1,8 +1,9 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const os = require("os");
 
-// ✅ Swagger imports
+// Swagger imports
 const swaggerJsDoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
 
@@ -10,19 +11,25 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ MongoDB connection
+// MongoDB connection (update to Atlas if needed)
 mongoose.connect("mongodb://127.0.0.1:27017/todos")
   .then(() => console.log("✅ MongoDB connected"))
   .catch(err => console.error("❌ MongoDB connection error:", err));
 
-// ✅ Schema & Model
+// Todo Schema & Model
 const TodoSchema = new mongoose.Schema({
   text: { type: String, required: true },
   completed: { type: Boolean, default: false },
 });
 const Todo = mongoose.model("Todo", TodoSchema);
 
-// ✅ Swagger setup
+// --------------------
+// Swagger setup
+// --------------------
+
+// Get public IP dynamically from env or fallback to localhost
+const publicIP = process.env.PUBLIC_IP || "localhost";
+
 const swaggerOptions = {
   swaggerDefinition: {
     openapi: "3.0.0",
@@ -32,46 +39,18 @@ const swaggerOptions = {
       description: "Simple Todo API with Express and MongoDB",
     },
     servers: [
-      { url: "http://13.60.36.33:5000" }, // Change to your EC2 public IP if needed
+      { url: `http://${publicIP}:5000` }, // dynamic IP
     ],
   },
-  apis: ["./index.js"], // Use this file for annotations
+  apis: ["./index.js"], // this file
 };
 
 const swaggerSpec = swaggerJsDoc(swaggerOptions);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
 
-
-/**
- * @swagger
- * /todos:
- *   get:
- *     summary: Get all todos
- *     responses:
- *       200:
- *         description: List of todos
- */
-
-/**
- * @swagger
- * /todos:
- *   post:
- *     summary: Create a new todo
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               text:
- *                 type: string
- *     responses:
- *       200:
- *         description: Todo created
- */
-
-// ✅ Routes
+// --------------------
+// Routes
+// --------------------
 
 // Test route
 app.get("/test", (req, res) => res.send("API is working"));
@@ -121,7 +100,10 @@ app.delete("/todos/:id", async (req, res) => {
   }
 });
 
-// ✅ Start server
+// --------------------
+// Start server
+// --------------------
 app.listen(5000, "0.0.0.0", () => {
   console.log("Server running on port 5000");
+  console.log(`Swagger docs available at http://${publicIP}:5000/api-docs`);
 });
