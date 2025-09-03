@@ -31,7 +31,7 @@ const Todo = mongoose.model("Todo", TodoSchema);
 const publicIP = process.env.PUBLIC_IP || "localhost";
 
 const swaggerOptions = {
-  swaggerDefinition: {
+  definition: {
     openapi: "3.0.0",
     info: {
       title: "Todo API",
